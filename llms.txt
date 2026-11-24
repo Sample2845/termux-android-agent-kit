@@ -1,0 +1,17 @@
+# termux-android-agent-kit
+
+> Agentic-friendly skill & CLI toolkit for offline multilingual voice dictation (whisper.cpp), microphone capture, Wireless ADB, and Android app launching from Termux (non-rooted Android 14-16 / HyperOS / MIUI).
+
+## Core Entrypoints
+- [AGENTS.md](AGENTS.md): Universal instructions and verification commands for AI coding agents.
+- [README.md](README.md): Human and agent overview, setup, and usage guide.
+- [.agents/skills/termux-android-mic-adb/SKILL.md](.agents/skills/termux-android-mic-adb/SKILL.md): Cross-agent skill runbook (Antigravity, Codex, Hermes, Claude Code).
+- [.agents/skills/termux-android-mic-adb/scripts/check_env.sh](.agents/skills/termux-android-mic-adb/scripts/check_env.sh): Non-destructive environment check (`--json` supported).
+
+## CLI Tools & Examples
+- [install.sh](install.sh): Idempotent installer supporting `--dry-run`, `--skill-only`, `--bin-only`, `--all`.
+- [bin/dictate](bin/dictate): Multilingual voice dictation CLI (offline `whisper.cpp` via `--offline` or Android `termux-speech-to-text`).
+- [bin/vdict](bin/vdict): Short wrapper for `dictate --offline`.
+- [bin/voice-tui](bin/voice-tui): Floating `tmux display-popup` dictation into any active TUI pane.
+- [examples/tmux-voice.conf](examples/tmux-voice.conf): Drop-in `tmux` bindings (`Alt+v`, `Prefix+v`).
+- [examples/termux-extra-keys.properties](examples/termux-extra-keys.properties): One-tap `VOICE` extra key for Termux.

@@ -1,0 +1,31 @@
+#!/data/data/com.termux/files/usr/bin/bash
+set -euo pipefail
+
+TARGET_PANE="${1:-}"
+LANG_CODE="${2:-${WHISPER_LANG:-auto}}"
+DICTATE_BIN="${PREFIX:-/data/data/com.termux/files/usr}/bin/dictate"
+
+if [ -z "$TARGET_PANE" ]; then
+  echo "Usage: voice-tui <tmux_pane_id> [lang]" >&2
+  exit 1
+fi
+
+printf '\033[1;36m=== Offline Voice Dictation (%s) -> TUI ===\033[0m\n\n' "$LANG_CODE"
+
+TEXT="$("$DICTATE_BIN" --offline -l "$LANG_CODE" || true)"
+
+if [ -z "$TEXT" ]; then
+  tmux display-message "VOICE: no speech detected" 2>/dev/null || true
+  exit 0
+fi
+
+# Save to Android clipboard as backup (non-blocking)
+printf '%s' "$TEXT" | timeout 3 termux-clipboard-set >/dev/null 2>&1 || true
+
+# Paste into the target pane right after the popup closes (without submitting ENTER)
+printf '%s' "$TEXT" | tmux load-buffer -b voice_tui -
+tmux run-shell -b "sleep 0.08 && tmux paste-buffer -d -p -b voice_tui -t '$TARGET_PANE'"
+
+PREVIEW="${TEXT:0:60}"
+[ "${#TEXT}" -gt 60 ] && PREVIEW="${PREVIEW}..."
+tmux display-message "VOICE inserted: $PREVIEW" 2>/dev/null || true
