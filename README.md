@@ -35,11 +35,12 @@ bash .agents/skills/termux-android-mic-adb/scripts/check_env.sh
 
 ### For AI Agents
 1. Read [`AGENTS.md`](./AGENTS.md) and [`.agents/skills/termux-android-mic-adb/SKILL.md`](./.agents/skills/termux-android-mic-adb/SKILL.md).
-2. Run structured diagnostics before taking action:
+2. Run static or live structured diagnostics before taking action (device-identifying fields are omitted by default; pass `--include-device-info` to opt in):
    ```bash
+   bash .agents/skills/termux-android-mic-adb/scripts/check_env.sh --static --json
    bash .agents/skills/termux-android-mic-adb/scripts/check_env.sh --json
    ```
-3. Use `bash install.sh --skill-only --dry-run` before installing.
+3. Run `bash scripts/test.sh` and `bash install.sh --skill-only --dry-run` before installing.
 
 ---
 

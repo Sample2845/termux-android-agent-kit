@@ -30,14 +30,14 @@ It enables AI agents (Antigravity, Codex, Hermes, Claude Code, etc.) and human o
 ## Safe Verification Commands
 
 ```bash
-# Syntax-check all shell scripts
-bash -n install.sh bin/dictate bin/vdict bin/voice-tui .agents/skills/termux-android-mic-adb/scripts/check_env.sh
+# Run full static host-side test suite (no microphone or ADB probes)
+bash scripts/test.sh
 
-# Dry-run installation (makes no changes)
+# Static machine-readable diagnostics (privacy-minimal by default; add --include-device-info to opt in)
+bash .agents/skills/termux-android-mic-adb/scripts/check_env.sh --static --json
+
+# Dry-run transactional installation (makes no changes)
 bash install.sh --all --dry-run
-
-# Machine-readable environment check (on Android/Termux)
-bash .agents/skills/termux-android-mic-adb/scripts/check_env.sh --json
 ```
 
 ## Contribution & Security Rules for Agents

@@ -9,7 +9,7 @@ COPY_CLIP=false
 OUT_FILE=""
 DURATION=""
 MODEL="${WHISPER_MODEL:-$HOME/.local/share/whisper/ggml-small-q5_1.bin}"
-WHISPER_BIN="${WHISPER_BIN:-${PREFIX:-/data/data/com.termux/files/usr}/bin/whisper-cli}"
+WHISPER_BIN="${WHISPER_BIN:-$(command -v whisper-cli 2>/dev/null || echo "${PREFIX:-/data/data/com.termux/files/usr}/bin/whisper-cli")}"
 THREADS="${WHISPER_THREADS:-6}"
 PROG_NAME="$(basename "$0")"
 
@@ -38,25 +38,23 @@ Options:
   --test           Verify Termux:API, whisper-cli, ffmpeg, and model availability
   -h, --help       Show this help message
 
+Temporary files:
+  Offline mode records temporary audio in \$TMPDIR/vdict.XXXXXX and removes it automatically on exit.
+
 Environment variables:
   WHISPER_LANG     Default offline language code (default: auto)
   WHISPER_MODEL    Default GGML model path (default: ~/.local/share/whisper/ggml-small-q5_1.bin)
   WHISPER_THREADS  CPU threads for whisper-cli (default: 6)
 
-Examples:
-  vdict                     # Record offline until ENTER (auto-detect language)
-  vdict -l en               # Force English offline transcription
-  vdict -l es -s 6          # Record 6 seconds in Spanish automatically
-  vdict -c -o notes.txt     # Continuous offline dictation appended to notes.txt
-  vdict -k                  # Dictate offline and copy to clipboard
-  dictate                   # Dictate via Android Speech-to-Text
+Documentation:
+  See README.md and .agents/skills/termux-android-mic-adb/SKILL.md.
 EOF
 }
 
 test_env() {
   local ok=0
   echo "Checking Termux:API..." >&2
-  if timeout 5 termux-battery-status >/dev/null 2>&1; then
+  if command -v termux-battery-status >/dev/null 2>&1 && timeout 5 termux-battery-status >/dev/null 2>&1; then
     echo "  [OK] Termux:API responding" >&2
   else
     echo "  [ERROR] Termux:API did not respond (verify app installation, permissions, and battery settings)" >&2
@@ -64,7 +62,7 @@ test_env() {
   fi
 
   echo "Checking offline transcription stack (whisper.cpp)..." >&2
-  if command -v "$WHISPER_BIN" >/dev/null 2>&1 || [ -x "$WHISPER_BIN" ]; then
+  if [ -x "$WHISPER_BIN" ] || command -v "$WHISPER_BIN" >/dev/null 2>&1; then
     echo "  [OK] whisper-cli: $WHISPER_BIN" >&2
   else
     echo "  [ERROR] whisper-cli not found: $WHISPER_BIN" >&2
@@ -99,7 +97,11 @@ while [ $# -gt 0 ]; do
       ;;
     -s|--seconds)
       shift
-      [ $# -gt 0 ] || { echo "Error: -s requires a duration in seconds." >&2; exit 1; }
+      [ $# -gt 0 ] || { echo "Error: -s requires a positive integer duration in seconds." >&2; exit 1; }
+      if ! [[ "$1" =~ ^[1-9][0-9]*$ ]]; then
+        echo "Error: -s requires a positive integer (got '$1')." >&2
+        exit 1
+      fi
       DURATION="$1"
       OFFLINE_MODE=true
       ;;
@@ -140,13 +142,19 @@ emit_text() {
       printf '%s\n' "$text" >> "$OUT_FILE"
     fi
     if [ "$COPY_CLIP" = true ]; then
-      printf '%s' "$text" | timeout 4 termux-clipboard-set 2>/dev/null || true
+      if ! printf '%s' "$text" | timeout 4 termux-clipboard-set 2>/dev/null; then
+        echo "Warning: failed to copy transcript to clipboard." >&2
+      fi
     fi
   fi
 }
 
 run_once_system() {
-  local text=""
+  if ! command -v termux-speech-to-text >/dev/null 2>&1; then
+    echo "Error: termux-speech-to-text not found (install termux-api)." >&2
+    return 1
+  fi
+
   if [ "$PARTIAL" = true ]; then
     if [ -n "$OUT_FILE" ]; then
       termux-speech-to-text -p | tee -a "$OUT_FILE"
@@ -156,22 +164,32 @@ run_once_system() {
     return $?
   fi
 
-  text="$(termux-speech-to-text || true)"
+  local text=""
+  local rc=0
+  text="$(termux-speech-to-text)" || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    echo "Error: termux-speech-to-text failed with exit code $rc." >&2
+    return "$rc"
+  fi
   emit_text "$text"
 }
 
 run_once_offline() {
   if [ ! -x "$WHISPER_BIN" ]; then
     echo "Error: whisper-cli not found at $WHISPER_BIN" >&2
-    exit 1
+    return 1
   fi
   if [ ! -s "$MODEL" ]; then
     echo "Error: Whisper model not found at $MODEL" >&2
-    exit 1
+    return 1
   fi
   if ! command -v ffmpeg >/dev/null 2>&1; then
     echo "Error: ffmpeg not found." >&2
-    exit 1
+    return 1
+  fi
+  if ! command -v termux-microphone-record >/dev/null 2>&1; then
+    echo "Error: termux-microphone-record not found (install termux-api)." >&2
+    return 1
   fi
 
   local workdir
@@ -189,7 +207,6 @@ run_once_offline() {
   }
   trap cleanup_rec RETURN INT TERM
 
-  # Clear any stale recording session
   timeout 2 termux-microphone-record -q >/dev/null 2>&1 || true
 
   local max_dur="${DURATION:-180}"
@@ -227,15 +244,25 @@ run_once_offline() {
   done
 
   if [ ! -s "$raw_m4a" ]; then
-    echo "Warning: no audio captured." >&2
-    return 0
+    echo "Error: no audio captured (verify Termux:API microphone permission)." >&2
+    return 1
   fi
 
   echo "[STT] Transcribing (lang=$LANG_CODE)..." >&2
-  ffmpeg -nostdin -loglevel error -y -i "$raw_m4a" -ar 16000 -ac 1 -c:a pcm_s16le "$wav_16k"
+  if ! ffmpeg -nostdin -loglevel error -y -i "$raw_m4a" -ar 16000 -ac 1 -c:a pcm_s16le "$wav_16k"; then
+    echo "Error: ffmpeg audio conversion failed." >&2
+    return 1
+  fi
 
-  local raw_out clean_text
-  raw_out="$("$WHISPER_BIN" -m "$MODEL" -l "$LANG_CODE" -t "$THREADS" -nt --no-prints -f "$wav_16k" 2>/dev/null || true)"
+  local raw_out=""
+  local w_rc=0
+  raw_out="$("$WHISPER_BIN" -m "$MODEL" -l "$LANG_CODE" -t "$THREADS" -nt --no-prints -f "$wav_16k" 2>/dev/null)" || w_rc=$?
+  if [ "$w_rc" -ne 0 ]; then
+    echo "Error: whisper-cli failed with exit code $w_rc." >&2
+    return "$w_rc"
+  fi
+
+  local clean_text
   clean_text="$(printf '%s\n' "$raw_out" \
     | sed -E 's/\[BLANK_AUDIO\]//g; s/^[[:space:]]+//; s/[[:space:]]+$//' \
     | awk 'NF' \
