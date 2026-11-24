@@ -6,8 +6,12 @@ It enables AI agents (Antigravity, Codex, Hermes, Claude Code, etc.) and human o
 1. Capture microphone audio and run **100% offline multilingual voice dictation** (`whisper.cpp` + `ffmpeg` + `Termux:API`), including direct floating-popup dictation into `tmux` TUI panes (`voice-tui`).
 2. Operate **local Wireless ADB** reliably (including OEM/HyperOS workarounds).
 3. Launch Android apps, URLs, and Settings screens cleanly via Termux or Wireless ADB.
+4. Organize launcher icons and folders using authorized ADB or temporary UHID input.
 
-## Canonical Skill
+## Canonical Skills
+
+- Home-screen organization: [`.agents/skills/android-home-organizer/SKILL.md`](./.agents/skills/android-home-organizer/SKILL.md).
+  Its controller uses only existing shell access to UHID and never changes permission restrictions.
 
 - Primary skill file: [`.agents/skills/termux-android-mic-adb/SKILL.md`](./.agents/skills/termux-android-mic-adb/SKILL.md)
 - Environment diagnostic (supports `--json` for structured parsing):

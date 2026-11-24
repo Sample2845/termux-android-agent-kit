@@ -3,6 +3,7 @@
 > Agentic-friendly skill & CLI toolkit for offline multilingual voice dictation (whisper.cpp), microphone capture, Wireless ADB, and Android app launching from Termux (non-rooted Android 14-16 / HyperOS / MIUI).
 
 ## Core Entrypoints
+- [.agents/skills/android-home-organizer/SKILL.md](.agents/skills/android-home-organizer/SKILL.md): Launcher organization with authorized ADB/UHID input, guarded naming, and verification.
 - [AGENTS.md](AGENTS.md): Universal instructions and verification commands for AI coding agents.
 - [README.md](README.md): Human and agent overview, setup, and usage guide.
 - [.agents/skills/termux-android-mic-adb/SKILL.md](.agents/skills/termux-android-mic-adb/SKILL.md): Cross-agent skill runbook (Antigravity, Codex, Hermes, Claude Code).

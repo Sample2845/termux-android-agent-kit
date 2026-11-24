@@ -2,8 +2,7 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SKILL_NAME="termux-android-mic-adb"
-SKILL_SRC="$REPO_DIR/.agents/skills/$SKILL_NAME"
+SKILL_NAMES=(termux-android-mic-adb android-home-organizer)
 BIN_DEST="${PREFIX:-$HOME/.local}/bin"
 
 INSTALL_SKILL=false
@@ -18,8 +17,8 @@ Usage: bash install.sh [options]
 Idempotent, backup-safe installer for termux-android-agent-kit.
 
 Options:
-  --all         Install both the cross-agent skill and CLI scripts (default)
-  --skill-only  Install/symlink only the cross-agent skill
+  --all         Install the cross-agent skills and CLI scripts (default)
+  --skill-only  Install/symlink only the cross-agent skills
   --bin-only    Install only bin/{dictate,vdict,voice-tui} into $PREFIX/bin
   --no-backup   Remove replaced pre-existing skill directory after staging succeeds
   --dry-run     Print planned actions without making any changes
@@ -59,6 +58,8 @@ run_step() {
 }
 
 install_skill_safe() {
+  local SKILL_NAME="$1"
+  local SKILL_SRC="$REPO_DIR/.agents/skills/$SKILL_NAME"
   local skills_root="$HOME/.agents/skills"
   local canonical_dir="$skills_root/$SKILL_NAME"
   local ts
@@ -83,7 +84,9 @@ install_skill_safe() {
     trap 'rm -rf "${stage_dir:-}"' EXIT
 
     cp -r "$SKILL_SRC/." "$stage_dir/"
-    chmod +x "$stage_dir/scripts/check_env.sh"
+    if [ -f "$stage_dir/scripts/check_env.sh" ]; then
+      chmod +x "$stage_dir/scripts/check_env.sh"
+    fi
 
     local backed_up=false
     if [ -e "$canonical_dir" ] || [ -L "$canonical_dir" ]; then
@@ -125,7 +128,9 @@ install_skill_safe() {
 }
 
 if [ "$INSTALL_SKILL" = true ]; then
-  install_skill_safe
+  for skill_name in "${SKILL_NAMES[@]}"; do
+    install_skill_safe "$skill_name"
+  done
 fi
 
 if [ "$INSTALL_BIN" = true ]; then

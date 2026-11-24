@@ -42,4 +42,8 @@ echo "[5/5] Installer dry-run check..."
 bash install.sh --all --dry-run >/dev/null
 echo "  [OK]"
 
+echo "Home organizer validation checks..."
+python3 scripts/test_home_organizer.py
+bash install.sh --skill-only --dry-run | python3 -c 'import sys; assert "android-home-organizer" in sys.stdin.read()'
+
 echo "ALL HOST-SIDE TESTS PASSED"

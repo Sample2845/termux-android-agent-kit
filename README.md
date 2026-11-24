@@ -8,6 +8,8 @@ Designed from the ground up to be immediately usable by both **humans** and **AI
 
 ## Features
 
+- **Home-Screen Organization**: A [dedicated skill](.agents/skills/android-home-organizer/SKILL.md) for arranging launcher folders, with temporary UHID input, guarded text entry, and cleanup. Uses existing ADB shell permissions; does not require root or install an APK.
+
 - **Cross-Agent Skill Discovery**: Ships in `.agents/skills/termux-android-mic-adb/SKILL.md` with standard YAML frontmatter, `AGENTS.md`, `llms.txt`, and structured JSON diagnostics (`check_env.sh --json`).
 - **100% Offline Multilingual Voice Dictation (`vdict` / `dictate --offline`)**: Records from Android's microphone via `Termux:API`, converts with `ffmpeg`, and transcribes locally using `whisper.cpp` across **99+ languages** (`-l auto` by default, or any ISO-639-1 code such as `en`, `es`, `fr`, `de`, `it`, `ja`, `ko`, `pt`, `zh`, etc.) — no cloud dependency or missing OEM offline language packs.
 - **Direct TUI Dictation (`voice-tui`)**: Triggered via `Alt+v`, `Ctrl+b v`, or a 1-tap `VOICE` Termux extra key — opens a floating `tmux` popup over any TUI (Antigravity, Codex, Hermes, bash), transcribes offline, and pastes cleanly into the active input box without auto-submitting `ENTER`.
@@ -26,7 +28,7 @@ cd termux-android-agent-kit
 # Preview what will be installed
 bash install.sh --all --dry-run
 
-# Install skill (symlinked into detected agent directories) + CLI scripts
+# Install skills (symlinked into detected agent directories) + CLI scripts
 bash install.sh --all
 
 # Check environment status
@@ -43,6 +45,15 @@ bash .agents/skills/termux-android-mic-adb/scripts/check_env.sh
 3. Run `bash scripts/test.sh` and `bash install.sh --skill-only --dry-run` before installing.
 
 ---
+
+## Organize an Android Home Screen
+
+After `bash install.sh --skill-only`, ask an agent to use `$android-home-organizer`.
+The skill inspects the current launcher and groups apps according to the request.
+For manual operation, see the [controller runbook](.agents/skills/android-home-organizer/references/controller.md).
+UHID compatibility must be probed on each device; the helper supports the active
+internal display in its natural orientation. No screenshots or device-specific
+layouts are included.
 
 ## CLI Usage
 

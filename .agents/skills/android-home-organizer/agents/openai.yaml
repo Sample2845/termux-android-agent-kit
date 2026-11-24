@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android Home Organizer"
+  short_description: "Organize Android home screens with ADB and UHID"
+  default_prompt: "Use $android-home-organizer to organize my Android home screen by category."
