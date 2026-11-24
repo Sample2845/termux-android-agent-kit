@@ -11,13 +11,13 @@ echo "  [OK]"
 
 echo "[2/5] Static JSON diagnostics check (no live Android/ADB probes)..."
 OUT="$(bash .agents/skills/termux-android-mic-adb/scripts/check_env.sh --static --json)"
-printf '%s\n' "$OUT" | python3 - <<'PY'
+printf '%s\n' "$OUT" | python3 -c '
 import json, sys
 d = json.load(sys.stdin)
 assert d["mode"] == "static", d
 assert d["termux_api_status"] == "skipped", d
 assert "device_info" not in d, "device_info must be opt-in"
-PY
+'
 echo "  [OK]"
 
 echo "[3/5] Reject unknown flags in check_env.sh and dictate..."
